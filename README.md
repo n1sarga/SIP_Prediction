@@ -16,6 +16,7 @@ In this project, we have implemented and evaluated the Rotation Forest Classifie
 To execute the project download the following:
 1. Download and Install the standalone version of NCBI Blast+ using this link: [NCBI Blast+](https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/)
 2. Download the Swiss-Prot Database using this link: [Swiss-Prot DB](https://ftp.ncbi.nlm.nih.gov/blast/db/)
+3. Run the scripts from the folders in the following order: Data Acquisition → Data Preprocessing → Rotation Forest and Results
 
 ## Packages Used:
 ![biopython](https://img.shields.io/badge/Biopython-1.81-green) ![networkx](https://img.shields.io/badge/NetworkX-3.1-yellow) ![pandas](https://img.shields.io/badge/Pandas-2.0.3-blue) ![numpy](https://img.shields.io/badge/Numpy-1.25.0-blue) ![scipy](https://img.shields.io/badge/Scipy-1.11.2-blue) ![pywt](https://img.shields.io/badge/Pywt-1.1.1-blue) ![requests](https://img.shields.io/badge/Requests-2.31.0-red) ![matplotlib](https://img.shields.io/badge/Matplotlib-3.8.0-orange) ![sklearn](https://img.shields.io/badge/scikit--learn-1.3.0-yellowgreen)
