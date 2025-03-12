@@ -1,6 +1,6 @@
 # Predicting Self-Interacting Proteins using Rotation Forest Classifier
 
-This is my university's undergraduate thesis. My thesis members were [Sofia Noor Rafa](https://github.com/sofiautilitarian) and [Ummay Khadiza Rumpa](https://github.com/ukrumpa).
+This is my university's undergraduate thesis. My thesis members were [Sofia Noor Rafa](https://github.com/sofiautilitarian) and [Ummay Khadiza Rumpa](https://github.com/ukrumpa). My thesis supervisor was [Dr. Shamim H. Ripon](https://fse.ewubd.edu/computer-science-engineering/faculty-view/dshr)
 In this project, we have implemented and evaluated the Rotation Forest Classifier for predicting interactions in Maize and Yeast using multiple feature extraction techniques. The RoF implementation was taken from [Liam-E2](https://github.com/Liam-E2/RotationForest).
 
 ## Workflow:
