@@ -55,9 +55,9 @@ def main(file_path):
 
     df = pd.DataFrame(sequences)
 
-    output_excel_file = 'C:/Users/nextn/Downloads/GitHub/SIP_PREDICTION_COMPARISON/Datasets/Yeast/Unique_Proteins.csv'
+    output_excel_file = 'C:/Users/nextn/Downloads/400 - Test/SIP_Prediction/SIP_PREDICTION_COMPARISON/Datasets/Yeast/Unique_Proteins.csv'
     df.to_csv(output_excel_file, index=False)
     print(f"Sequences with interaction data saved to {output_excel_file}")
 
-file_path = 'C:/Users/nextn/Downloads/GitHub/SIP_PREDICTION_COMPARISON/Datasets/Yeast/Unique_Proteins.csv'
+file_path = 'C:/Users/nextn/Downloads/400 - Test/SIP_Prediction/SIP_PREDICTION_COMPARISON/Datasets/Yeast/Unique_Proteins.csv'
 main(file_path)
