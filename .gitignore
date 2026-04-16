@@ -8,11 +8,12 @@ venv/
 env/
 
 artifacts/features/pssm/temp.fasta
-artifacts/features/pssm/*/Profiles/
+artifacts/features/pssm/temp_test*.fasta
 artifacts/fusion/*/Profiles/
 artifacts/fusion/*/Engineered_PSSM_Profiles/
 artifacts/fusion/*/Fused_Features/
 reports/results/
+_blastdb_link/
 data/external/blast_db/
 !data/external/blast_db/
 data/external/blast_db/*
