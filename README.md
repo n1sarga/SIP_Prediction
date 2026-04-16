@@ -17,7 +17,7 @@ This is my university's undergraduate thesis. My thesis members were [Sofia Noor
 ## Project Layout
 
 ```text
-SIP_Prediction/
+PPI Prediction/
 |-- src/
 |   |-- data_collection/
 |   |-- features/
@@ -38,6 +38,8 @@ SIP_Prediction/
 ## Execution Order
 
 Run the scripts in the following order:
+
+If you need to find self-interacting proteins first, run step 1. Otherwise, start from step 2.
 
 1. `python src/data_collection/SIP_Finder.py`
 2. `python src/data_collection/Sequence.py`
