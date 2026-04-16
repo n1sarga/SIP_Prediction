@@ -14,5 +14,8 @@ artifacts/fusion/*/Engineered_PSSM_Profiles/
 artifacts/fusion/*/Fused_Features/
 reports/results/
 data/external/blast_db/
+!data/external/blast_db/
+data/external/blast_db/*
+!data/external/blast_db/README.txt
 
 Feature_Extraction/**/__pycache__/

@@ -1,23 +1,23 @@
 # Predicting Self-Interacting Proteins Using Rotation Forest Classifier
 
-This project is based on an undergraduate thesis by Sofia Noor Rafa, Ummay Khadiza Rumpa, and Nisarga Mridha. It implements and evaluates a Rotation Forest classifier for predicting self-interacting proteins in Maize and Yeast using multiple feature extraction techniques. The original Rotation Forest implementation was adapted from Liam-E2.
-
-This README is based on the original GitHub repository README, but the instructions below have been updated to match the restructured local project layout in this folder.
+This is my university's undergraduate thesis. My thesis members were [Sofia Noor Rafa](https://github.com/sofiautilitarian) and [Ummay Khadiza Rumpa](https://github.com/ukrumpa). My thesis supervisor was [Dr. Shamim H. Ripon](https://fse.ewubd.edu/computer-science-engineering/faculty-view/dshr). In this project, we have implemented and evaluated the Rotation Forest Classifier for predicting interactions in Maize and Yeast using multiple feature extraction techniques. The RoF implementation was taken from [Liam-E2](https://github.com/Liam-E2/RotationForest).
 
 ## Workflow
 
 1. Collect protein-protein interaction data and the corresponding protein sequences.
 2. Generate negative interactions using a bipartite graph.
 3. Generate PSSM profiles for the sequences.
-4. Generate feature embeddings using amino acid composition, conjoint triads, and PSSM-based features in the restructured pipeline.
+4. Generate feature embeddings using amino acid composition, conjoint triads, and PSSM-based features.
 5. Fuse the generated feature sets.
 6. Train the Rotation Forest model.
 7. Evaluate the model using classification metrics and ROC-AUC.
 
-## Restructured Project Layout
+![System Architecture](https://github.com/user-attachments/assets/b9f671a3-0e0c-43ab-904a-c0df7e249aab)
+
+## Project Layout
 
 ```text
-Test - 400/
+SIP_Prediction/
 |-- src/
 |   |-- data_collection/
 |   |-- features/
@@ -52,25 +52,11 @@ Run the scripts in the following order:
 
 To execute the project, download and configure the following:
 
-1. NCBI BLAST+ standalone tools: https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/
-2. Swiss-Prot database: https://ftp.ncbi.nlm.nih.gov/blast/db/
+1. NCBI BLAST+ standalone tools: [NCBI BLAST+](https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/)
+2. Swiss-Prot database: [Swiss-Prot DB](https://ftp.ncbi.nlm.nih.gov/blast/db/)
 
-Place external BLAST resources under `data/external/blast_db/` so the restructured project remains consistent.
+Place external BLAST resources under `data/external/blast_db/`.
 
-## Main Packages Used
+## Packages Used
 
-- `biopython`
-- `networkx`
-- `pandas`
-- `numpy`
-- `scipy`
-- `pywt`
-- `requests`
-- `matplotlib`
-- `scikit-learn`
-
-## Notes
-
-- The original repository highlighted transformation methods such as DST, DCT, WT, DHT, and FFT. The restructured local pipeline currently exposes amino acid composition, conjoint triads, PSSM processing, feature fusion, and Rotation Forest modeling through the `src/` layout present in this folder.
-- The species label `Diabates` is preserved in the local data paths because that naming already exists in the project files.
-- Additional structure details are documented in [docs/project_structure.md](d:/Profiles/Nisarga%20Mridha/Coding/Test%20-%20400/docs/project_structure.md).
+![biopython](https://img.shields.io/badge/Biopython-1.81-green) ![networkx](https://img.shields.io/badge/NetworkX-3.1-yellow) ![pandas](https://img.shields.io/badge/Pandas-2.0.3-blue) ![numpy](https://img.shields.io/badge/Numpy-1.25.0-blue) ![scipy](https://img.shields.io/badge/Scipy-1.11.2-blue) ![pywt](https://img.shields.io/badge/Pywt-1.1.1-blue) ![requests](https://img.shields.io/badge/Requests-2.31.0-red) ![matplotlib](https://img.shields.io/badge/Matplotlib-3.8.0-orange) ![sklearn](https://img.shields.io/badge/scikit--learn-1.3.0-yellowgreen)
