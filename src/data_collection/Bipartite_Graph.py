@@ -4,21 +4,32 @@ Generate negative protein interactions from the positive interaction graph.
 
 from pathlib import Path
 import itertools
+import os
 
 import networkx as nx
 import pandas as pd
 
 
-SPECIES = "Diabates"
+SPECIES = os.getenv("SPECIES", "Diabates")
 ROOT = Path(__file__).resolve().parents[2]
 PROCESSED_DIR = ROOT / "data" / "processed" / SPECIES
 
 
 def main() -> None:
     input_path = PROCESSED_DIR / f"{SPECIES}_Cleaned.csv"
+    proteins_path = PROCESSED_DIR / "Unique_Proteins.csv"
     output_path = PROCESSED_DIR / f"{SPECIES}_All.csv"
 
     df = pd.read_csv(input_path)
+    if proteins_path.exists():
+        available_proteins = set(pd.read_csv(proteins_path)["Protein Identifier"])
+        before_count = len(df)
+        df = df[
+            df["Identifier A"].isin(available_proteins)
+            & df["Identifier B"].isin(available_proteins)
+        ].copy()
+        print(f"Filtered interactions to proteins with sequences: {before_count} -> {len(df)}")
+
     positive_interactions = df[df["Interaction"] == 1]
 
     graph = nx.Graph()

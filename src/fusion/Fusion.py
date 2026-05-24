@@ -1,5 +1,5 @@
-import os
 from pathlib import Path
+import os
 
 import pandas as pd
 
@@ -26,9 +26,9 @@ def get_parquet_files(folder: Path) -> dict[str, Path]:
 
 def load_component(component: str, file_name: str) -> pd.DataFrame:
     if component == "aac":
-        return pd.read_parquet((AAC_DIR / file_name)).copy().add_prefix("AAC_")
+        return pd.read_parquet(AAC_DIR / file_name).copy().add_prefix("AAC_")
     if component == "ct":
-        return pd.read_parquet((CT_DIR / file_name)).copy()
+        return pd.read_parquet(CT_DIR / file_name).copy()
     if component == "pssm":
         pssm_df = pd.read_parquet(PSSM_DIR / file_name).copy()
         return pd.DataFrame([pssm_df.mean(axis=0)]).add_prefix("PSSM_")

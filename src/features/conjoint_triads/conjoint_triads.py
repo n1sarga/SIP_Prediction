@@ -2,8 +2,8 @@
 Compute conjoint triad features for a species-specific protein dataset.
 """
 
-import os
 from pathlib import Path
+import os
 
 import pandas as pd
 

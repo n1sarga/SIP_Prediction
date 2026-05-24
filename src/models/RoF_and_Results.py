@@ -1,18 +1,30 @@
 from pathlib import Path
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.stats import mode
 from sklearn.decomposition import PCA
-from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, auc, confusion_matrix, f1_score, matthews_corrcoef, precision_score, recall_score, roc_curve
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+    accuracy_score,
+    auc,
+    confusion_matrix,
+    f1_score,
+    matthews_corrcoef,
+    precision_score,
+    recall_score,
+    roc_curve,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 
 
-SPECIES = "Diabates"
+SPECIES = os.getenv("SPECIES", "Diabates")
+FUSION_NAME = os.getenv("FUSION_NAME", "aac_ct_pssm")
 ROOT = Path(__file__).resolve().parents[2]
-FUSED_FEATURES_FILE = ROOT / "artifacts" / "fusion" / SPECIES / "fused_feature_vectors.csv"
+FUSED_FEATURES_FILE = ROOT / "artifacts" / "fusion" / SPECIES / FUSION_NAME / "feature_vectors.csv"
 INTERACTION_FILE = ROOT / "data" / "processed" / SPECIES / f"{SPECIES}_All.csv"
 REPORTS_DIR = ROOT / "reports" / "results" / SPECIES
 
@@ -65,7 +77,6 @@ class RotationTree:
             transformed_partitions.append(np.dot(partition, rotation_matrix))
 
         new_X = np.concatenate(transformed_partitions, axis=1)
-
         if self.bootstrap:
             xx, yy = self.boot_sample(new_X, y)
             self.model.fit(xx, yy)
@@ -77,12 +88,8 @@ class RotationTree:
         cols = np.arange(n_cols)
         np.random.shuffle(cols)
         partitions = [cols[i::self.n_features] for i in range(self.n_features)]
-
-        partitioned_data = []
-        for part in partitions:
-            partitioned_data.append(X[:, part])
         self.partition_nums = partitions
-        return partitioned_data
+        return [X[:, part] for part in partitions]
 
     def get_samples(self, X_partition, y):
         Xy = np.column_stack([X_partition, y])
@@ -92,7 +99,6 @@ class RotationTree:
             n_sample = max(1, round(self.sample_prop * cls_rows.shape[0]))
             idx = np.random.choice(cls_rows.shape[0], size=n_sample, replace=True)
             sampled_rows.append(cls_rows[idx, :])
-
         sampled_data = np.vstack(sampled_rows)
         return sampled_data[:, :-1]
 
@@ -137,9 +143,18 @@ class RotationForest:
     def fit(self, X, y, base_tree=None):
         for _ in range(self.n_trees):
             if base_tree:
-                tree = RotationTree.from_model(base_tree, n_features=self.n_features, sample_prop=self.sample_prop, bootstrap=self.bootstrap)
+                tree = RotationTree.from_model(
+                    base_tree,
+                    n_features=self.n_features,
+                    sample_prop=self.sample_prop,
+                    bootstrap=self.bootstrap,
+                )
             else:
-                tree = RotationTree(n_features=self.n_features, sample_prop=self.sample_prop, bootstrap=self.bootstrap)
+                tree = RotationTree(
+                    n_features=self.n_features,
+                    sample_prop=self.sample_prop,
+                    bootstrap=self.bootstrap,
+                )
             tree.fit(X, y)
             self.trees.append(tree)
 
@@ -155,7 +170,13 @@ def main() -> None:
     df_interactions = pd.read_csv(INTERACTION_FILE)
     X, y = prepare_pair_features(df_features, df_interactions)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y,
+    )
 
     rf = RotationForest(n_trees=100, n_features=5, bootstrap=True)
     rf.fit(X_train, y_train)

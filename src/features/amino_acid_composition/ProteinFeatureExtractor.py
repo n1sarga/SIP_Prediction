@@ -1,5 +1,5 @@
-import os
 from pathlib import Path
+import os
 
 import pandas as pd
 
@@ -36,18 +36,14 @@ def main() -> None:
     df_aac_all = pd.DataFrame(aac_data)
     aac_cols = ["Protein Identifier"] + [c for c in df_aac_all.columns if c != "Protein Identifier"]
     df_aac_all = df_aac_all[aac_cols]
-    aac_csv_path = OUTPUT_DIR / "amino_acid_composition_vectors.csv"
-    df_aac_all.to_csv(aac_csv_path, index=False)
+    df_aac_all.to_csv(OUTPUT_DIR / "amino_acid_composition_vectors.csv", index=False)
 
     df_seqfeat_all = pd.DataFrame(seqfeat_data)
     seq_cols = ["Protein Identifier"] + [c for c in df_seqfeat_all.columns if c != "Protein Identifier"]
     df_seqfeat_all = df_seqfeat_all[seq_cols]
-    seqfeat_csv_path = OUTPUT_DIR / "sequence_level_vectors.csv"
-    df_seqfeat_all.to_csv(seqfeat_csv_path, index=False)
+    df_seqfeat_all.to_csv(OUTPUT_DIR / "sequence_level_vectors.csv", index=False)
 
-    print(f"Combined AAC CSV saved at: {aac_csv_path}")
-    print(f"AAC parquet profiles saved in: {PROFILE_DIR}")
-    print(f"Sequence-level feature CSV saved at: {seqfeat_csv_path}")
+    print(f"AAC features saved under: {OUTPUT_DIR}")
 
 
 if __name__ == "__main__":

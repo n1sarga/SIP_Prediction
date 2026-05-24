@@ -7,16 +7,9 @@ __pycache__/
 venv/
 env/
 
-artifacts/features/pssm/temp.fasta
-artifacts/features/pssm/temp_test*.fasta
-artifacts/fusion/*/Profiles/
-artifacts/fusion/*/Engineered_PSSM_Profiles/
-artifacts/fusion/*/Fused_Features/
-reports/results/
-_blastdb_link/
-data/external/blast_db/
-!data/external/blast_db/
-data/external/blast_db/*
-!data/external/blast_db/README.txt
+data/external/
+*.parquet
 
-Feature_Extraction/**/__pycache__/
+artifacts/features/pssm/temp.fasta
+reports/logs/
+reports/results/

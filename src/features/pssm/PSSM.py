@@ -1,8 +1,10 @@
+from pathlib import Path
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import hashlib
 import os
+import shutil
 import subprocess
 import tempfile
-import time
-from pathlib import Path
 
 import pandas as pd
 from Bio.Align import substitution_matrices
@@ -11,69 +13,81 @@ from Bio.Align import substitution_matrices
 SPECIES = os.getenv("SPECIES", "Diabates")
 ROOT = Path(__file__).resolve().parents[3]
 DATASET_FILE = ROOT / "data" / "processed" / SPECIES / "Unique_Proteins.csv"
-BLAST_DB = ROOT / "data" / "external" / "blast_db" / "swissprot" / "swissprot"
+BLAST_DB = Path(
+    os.getenv(
+        "BLAST_DB",
+        str(ROOT / "data" / "external" / "blast_db" / "swissprot" / "swissprot"),
+    )
+)
 OUTPUT_DIR = ROOT / "artifacts" / "features" / "pssm" / SPECIES / "Profiles"
-OUTPUT_CSV = ROOT / "artifacts" / "features" / "pssm" / SPECIES / "pssm_feature_vectors.csv"
-RUNTIME_DIR = Path(tempfile.gettempdir()) / "ppi_prediction_pssm"
+BLAST_WORK_ROOT = Path(tempfile.gettempdir()) / "test400_blast"
+BLAST_DB_LINK = BLAST_WORK_ROOT / f"blast_db_{hashlib.sha1(str(BLAST_DB.parent).encode()).hexdigest()[:10]}"
+PSSM_WORKERS = int(os.getenv("PSSM_WORKERS", str(min(4, os.cpu_count() or 1))))
+BLAST_NUM_THREADS = os.getenv("BLAST_NUM_THREADS", "1" if PSSM_WORKERS > 1 else "4")
+BLAST_NUM_ITERATIONS = os.getenv("BLAST_NUM_ITERATIONS", "3")
+BLAST_EVALUE = os.getenv("BLAST_EVALUE", "0.001")
+BLAST_MAX_TARGET_SEQS = os.getenv("BLAST_MAX_TARGET_SEQS", "500")
 
 
-def safe_unlink(path: Path, retries: int = 5, delay: float = 0.2) -> None:
-    for attempt in range(retries):
-        try:
-            path.unlink(missing_ok=True)
-            return
-        except PermissionError:
-            if attempt == retries - 1:
-                return
-            time.sleep(delay)
+def ensure_blast_db_link() -> None:
+    BLAST_WORK_ROOT.mkdir(parents=True, exist_ok=True)
+    if BLAST_DB_LINK.exists() or BLAST_DB_LINK.is_symlink():
+        if not BLAST_DB_LINK.is_dir():
+            raise RuntimeError(f"Blast DB link path is not a directory: {BLAST_DB_LINK}")
+        return
+
+    cmd = ["cmd", "/c", "mklink", "/J", str(BLAST_DB_LINK), str(BLAST_DB.parent)]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if result.returncode != 0 and not BLAST_DB_LINK.is_dir():
+        raise RuntimeError(f"Could not create BLAST DB junction: {result.stderr.strip() or result.stdout.strip()}")
 
 
-def prepare_blast_db_path() -> Path:
-    db_path = BLAST_DB
-    if " " not in str(db_path):
-        return db_path
+def run_psiblast(protein_sequence: str, protein_id: str) -> Path:
+    ensure_blast_db_link()
+    work_dir = BLAST_WORK_ROOT / protein_id
+    work_dir.mkdir(parents=True, exist_ok=True)
+    work_fasta = work_dir / "query.fasta"
+    work_pssm = work_dir / "profile.pssm"
 
-    RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    link_dir = RUNTIME_DIR / "blastdb"
-    if not link_dir.exists():
-        result = subprocess.run(
-            ["cmd", "/c", "mklink", "/J", str(link_dir), str(db_path.parent)],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0 and not link_dir.exists():
-            raise RuntimeError(result.stderr.strip() or result.stdout.strip() or "Failed to create BLAST database junction")
-    return link_dir / db_path.name
+    with work_fasta.open("w", encoding="utf-8") as fasta_file:
+        fasta_file.write(">temp\n")
+        fasta_file.write(protein_sequence)
 
+    cmd = [
+        "psiblast",
+        "-query",
+        str(work_fasta),
+        "-db",
+        str(BLAST_DB_LINK / BLAST_DB.name),
+        "-evalue",
+        BLAST_EVALUE,
+        "-num_iterations",
+        BLAST_NUM_ITERATIONS,
+        "-num_threads",
+        BLAST_NUM_THREADS,
+        "-max_target_seqs",
+        BLAST_MAX_TARGET_SEQS,
+        "-out",
+        os.devnull,
+        "-outfmt",
+        "6",
+        "-out_ascii_pssm",
+        str(work_pssm),
+        "-save_pssm_after_last_round",
+    ]
+    result = subprocess.run(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        shutil.rmtree(work_dir, ignore_errors=True)
+        raise RuntimeError(result.stderr.strip() or f"psiblast exited with {result.returncode}")
 
-def run_psiblast(protein_sequence: str, temp_fasta: Path, output_pssm_file: Path) -> None:
-    temp_fasta.parent.mkdir(parents=True, exist_ok=True)
-    blast_db_path = prepare_blast_db_path()
-    try:
-        with temp_fasta.open("w", encoding="utf-8") as fasta_file:
-            fasta_file.write(">temp\n")
-            fasta_file.write(protein_sequence)
-
-        subprocess.run(
-            [
-                "psiblast",
-                "-query",
-                str(temp_fasta),
-                "-db",
-                str(blast_db_path),
-                "-evalue",
-                "0.001",
-                "-num_iterations",
-                "3",
-                "-out_ascii_pssm",
-                str(output_pssm_file),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    finally:
-        safe_unlink(temp_fasta)
+    work_fasta.unlink(missing_ok=True)
+    return work_pssm
 
 
 def parse_pssm(filename: Path) -> pd.DataFrame:
@@ -114,39 +128,59 @@ def encode_with_blosum62(protein_sequence: str) -> pd.DataFrame:
     return blosum_df.drop(columns=["B", "Z", "X", "*"], errors="ignore")
 
 
-def generate_pssm(protein_sequence: str, temp_fasta: Path, output_pssm_file: Path) -> pd.DataFrame:
+def generate_pssm(protein_id: str, protein_sequence: str) -> pd.DataFrame:
     try:
-        run_psiblast(protein_sequence, temp_fasta, output_pssm_file)
-        return parse_pssm(output_pssm_file)
+        work_pssm = run_psiblast(protein_sequence, protein_id)
+        try:
+            return parse_pssm(work_pssm)
+        finally:
+            shutil.rmtree(work_pssm.parent, ignore_errors=True)
     except Exception as exc:
-        print(f"Falling back to BLOSUM62 encoding for {output_pssm_file.stem}: {exc}")
+        print(f"Falling back to BLOSUM62 encoding for {protein_id}: {exc}")
         return encode_with_blosum62(protein_sequence)
+
+
+def process_protein(record: tuple[str, str]) -> str:
+    identifier, sequence = record
+    output_parquet = OUTPUT_DIR / f"{identifier}.parquet"
+    if output_parquet.exists():
+        return identifier
+
+    pssm_df = generate_pssm(identifier, sequence)
+    pssm_df.to_parquet(output_parquet)
+    return identifier
 
 
 def process_dataset(dataset_file: Path) -> None:
     df = pd.read_csv(dataset_file)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-    mean_rows = []
+    ensure_blast_db_link()
 
-    for _, row in df.iterrows():
-        identifier = row["Protein Identifier"]
-        sequence = row["Protein Sequence"]
-        temp_fasta = RUNTIME_DIR / f"{SPECIES.lower()}_{identifier}.fasta"
-        temp_pssm = RUNTIME_DIR / f"{SPECIES.lower()}_{identifier}.txt"
-        pssm_df = generate_pssm(sequence, temp_fasta, temp_pssm)
-        pssm_df.to_parquet(OUTPUT_DIR / f"{identifier}.parquet")
-        safe_unlink(temp_pssm)
-        mean_row = pssm_df.mean(axis=0).to_dict()
-        mean_row["Protein Identifier"] = identifier
-        mean_rows.append(mean_row)
-        print(f"Processed {identifier}")
+    existing = {path.stem for path in OUTPUT_DIR.glob("*.parquet")}
+    pending = df[~df["Protein Identifier"].isin(existing)]
+    records = [
+        (str(row["Protein Identifier"]), str(row["Protein Sequence"]))
+        for _, row in pending.iterrows()
+    ]
 
-    df_out = pd.DataFrame(mean_rows)
-    columns = ["Protein Identifier"] + [col for col in df_out.columns if col != "Protein Identifier"]
-    df_out = df_out[columns]
-    df_out.to_csv(OUTPUT_CSV, index=False)
-    print(f"Combined PSSM feature CSV saved to: {OUTPUT_CSV}")
+    print(f"PSSM profiles complete: {len(existing)}/{len(df)}")
+    print(f"PSSM profiles pending: {len(records)}")
+    print(f"PSSM workers: {PSSM_WORKERS}; BLAST threads per worker: {BLAST_NUM_THREADS}")
+
+    if not records:
+        return
+
+    if PSSM_WORKERS == 1:
+        for index, record in enumerate(records, start=1):
+            identifier = process_protein(record)
+            print(f"Processed {identifier} ({index}/{len(records)})")
+        return
+
+    with ProcessPoolExecutor(max_workers=PSSM_WORKERS) as executor:
+        futures = [executor.submit(process_protein, record) for record in records]
+        for index, future in enumerate(as_completed(futures), start=1):
+            identifier = future.result()
+            print(f"Processed {identifier} ({index}/{len(records)})")
 
 
 if __name__ == "__main__":

@@ -3,19 +3,19 @@ Fetch protein sequences from UniProt and write the filtered protein list.
 """
 
 from pathlib import Path
-import csv
+import os
 
 import pandas as pd
 import requests
 
 
-SPECIES = "Diabates"
+SPECIES = os.getenv("SPECIES", "Diabates")
 ROOT = Path(__file__).resolve().parents[2]
 PROCESSED_DIR = ROOT / "data" / "processed" / SPECIES
 
 
 def fetch_protein_sequence(uniprot_id: str) -> str | None:
-    url = f"https://www.uniprot.org/uniprot/{uniprot_id}.fasta"
+    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.fasta"
     response = requests.get(url, timeout=30)
     if not response.ok:
         print(f"Failed to fetch sequence for UniProt ID: {uniprot_id}")
@@ -28,22 +28,18 @@ def fetch_protein_sequence(uniprot_id: str) -> str | None:
         return "".join(lines[1:])
     return "".join(lines)
 
-
-def read_csv(file_path: Path) -> list[list[str]]:
-    with file_path.open("r", newline="", encoding="utf-8") as csv_file:
-        return list(csv.reader(csv_file))
-
-
 def main() -> None:
     input_path = PROCESSED_DIR / "Unique_Proteins.csv"
     output_path = PROCESSED_DIR / "Unique_Proteins.csv"
 
-    data = read_csv(input_path)
+    data = pd.read_csv(input_path).fillna("")
     sequences = []
-    for row in data:
-        if len(row) < 2:
+    for _, row in data.iterrows():
+        pid = str(row["Protein Identifier"]).strip()
+        pseq = str(row["Protein Sequence"]).strip()
+        if not pid:
             continue
-        pid, pseq = row
+
         sequence = fetch_protein_sequence(pid)
         if sequence is None and not pseq:
             continue

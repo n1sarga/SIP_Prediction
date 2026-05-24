@@ -1,9 +1,10 @@
 from pathlib import Path
+import os
 
 import pandas as pd
 
 
-SPECIES = "Diabates"
+SPECIES = os.getenv("SPECIES", "Diabates")
 ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "data" / "raw" / SPECIES
 PROCESSED_DIR = ROOT / "data" / "processed" / SPECIES
@@ -27,8 +28,9 @@ def main() -> None:
     df = df.drop_duplicates()
     df["Interaction"] = 1
 
-    proteins = df[["Identifier A"]].drop_duplicates()
-    proteins = proteins.rename(columns={"Identifier A": "Protein Identifier"})
+    proteins_a = df[["Identifier A"]].rename(columns={"Identifier A": "Protein Identifier"})
+    proteins_b = df[["Identifier B"]].rename(columns={"Identifier B": "Protein Identifier"})
+    proteins = pd.concat([proteins_a, proteins_b], ignore_index=True).drop_duplicates()
     proteins["Protein Sequence"] = None
 
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
