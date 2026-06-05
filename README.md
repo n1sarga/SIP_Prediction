@@ -5,12 +5,12 @@ This is my university's undergraduate thesis. My thesis members were [Sofia Noor
 ## Workflow
 
 1. Collect protein-protein interaction data and the corresponding protein sequences.
-2. Generate negative interactions using a bipartite graph.
+2. Generate controlled negative interaction sets using the bipartite graph script.
 3. Generate PSSM profiles for the sequences.
 4. Generate feature embeddings using amino acid composition, conjoint triads, and PSSM-based features.
 5. Fuse the generated feature sets.
-6. Train the Rotation Forest model.
-7. Evaluate the model using classification metrics and ROC-AUC.
+6. Train baseline, modern, and Rotation Forest models.
+7. Evaluate models with leakage-aware splits and deployment-oriented metrics.
 
 ![System Architecture](https://github.com/user-attachments/assets/b9f671a3-0e0c-43ab-904a-c0df7e249aab)
 
@@ -41,14 +41,42 @@ Run the scripts in the following order:
 
 If you need to find self-interacting proteins first, run step 1. Otherwise, start from step 2.
 
-1. `python src/data_collection/SIP_Finder.py`
-2. `python src/data_collection/Sequence.py`
-3. `python src/data_collection/Bipartite_Graph.py`
-4. `python src/features/amino_acid_composition/ProteinFeatureExtractor.py`
+1. `python src/data_collection/find_self_interacting_proteins.py`
+2. `python src/data_collection/fetch_protein_sequences.py`
+3. `python src/data_collection/build_negative_sets.py`
+4. `python src/features/amino_acid_composition/extract_aac_features.py`
 5. `python src/features/conjoint_triads/conjoint_triads.py`
-6. `python src/features/pssm/PSSM.py`
-7. `python src/fusion/Fusion.py`
-8. `python src/models/RoF_and_Results.py`
+6. `python src/features/pssm/generate_pssm_profiles.py`
+7. `python src/fusion/build_feature_fusion.py`
+8. `python src/models/run_controlled_experiment.py`
+9. `python src/models/summarize_experiment_runs.py`
+
+For a labelled raw PPI dataset such as Yeast, use:
+
+`python src/data_collection/prepare_labeled_ppi_dataset.py`
+
+## Controlled Experiment
+
+`build_negative_sets.py` writes multiple negative sets:
+
+- `random_1to1`
+- `matched_1to1`
+- `random_10to1`
+- `degree_matched_10to1`
+
+`run_controlled_experiment.py` compares feature sets, models, and train/test splits. Model code is split into focused modules under `src/models/`.
+
+- Feature sets: `aac`, `ct`, `pssm`, `aac_ct`, `aac_pssm`, `ct_pssm`, `aac_ct_pssm`
+- Splits: `random_pair`, `protein_holdout`, `low_similarity_holdout`
+- Models: similarity baseline, degree baseline, logistic regression, Random Forest, XGBoost, LightGBM, and Rotation Forest
+
+The combined reports are saved under:
+
+`reports/results/<SPECIES>/controlled_experiment/summary.md`
+
+The labelled Yeast PPI report from the current run is saved at:
+
+`reports/results/Yeast/controlled_ppi_experiment/summary.md`
 
 ## Required External Resources
 

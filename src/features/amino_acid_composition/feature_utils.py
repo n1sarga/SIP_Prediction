@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from AAlibraries import kD
+from aa_libraries import kD
 
 
 def find_nglyc_motifs(seq: str) -> list[int]:

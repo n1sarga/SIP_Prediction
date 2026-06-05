@@ -1,4 +1,4 @@
-# AAlibraries.py
+# Amino-acid physicochemical lookup tables.
 
 kD = {
     'A': 1.8, 'R': -4.5, 'N': -3.5, 'D': -3.5, 'C': 2.5,
