@@ -11,5 +11,6 @@ data/external/
 *.parquet
 
 artifacts/features/pssm/temp.fasta
+artifacts/features/pssm/*.fasta
 reports/logs/
 reports/results/
